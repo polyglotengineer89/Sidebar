@@ -83,7 +83,7 @@ export class SidebarMenu {
 
   /**
    * Sidebar width (expanded).
-   * @default 290px
+   * @default 220px
    */
   width?: string;
 

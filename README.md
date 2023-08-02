@@ -168,13 +168,13 @@ props: {
   // Sidebar width (expanded)
   width: {
     type: String,
-    default: '290px'
+    default: '220px'
   },
 
   // Sidebar width (collapsed)
   widthCollapsed: {
     type: String,
-    default: '65px'
+    default: '44px'
   },
 
   // Keep only one child opened at a time (first level only)

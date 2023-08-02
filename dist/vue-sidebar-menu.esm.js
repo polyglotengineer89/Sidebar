@@ -701,10 +701,24 @@ var script$2 = {
       type: Number,
       default: 1,
     },
+    currRole: {
+      type: String,
+      default: '',
+      required: true
+    }
   },
   setup(props) {
     const { getSidebarProps, getIsCollapsed: isCollapsed } = useSidebar();
     const { linkComponentName } = toRefs(getSidebarProps);
+
+    const hasRole = (itemRoles, currRole) => {
+      console.log(itemRoles, currRole);
+      if(itemRoles === undefined){
+        return true
+      }
+      return itemRoles.some((role) => currRole == role)
+    };
+
 
     const {
       active,
@@ -746,6 +760,7 @@ var script$2 = {
       isFirstLevel,
       isHidden,
       hasChild,
+      hasRole,
       linkClass,
       linkAttrs,
       itemClass,
@@ -779,16 +794,15 @@ function render$2(_ctx, _cache, $props, $setup, $data, $options) {
           key: 1,
           class: ['vsm--header', $props.item.class]
         }, $props.item.attributes), toDisplayString($props.item.header), 17 /* TEXT, FULL_PROPS */))
-      : (!$setup.isHidden)
+      : (!$setup.isHidden && $setup.hasRole($props.item.roles,$props.currRole))
         ? (openBlock(), createElementBlock("li", mergeProps({
             key: 2,
             class: $setup.itemClass,
             onMouseover: _cache[0] || (_cache[0] = (...args) => ($setup.onMouseOver && $setup.onMouseOver(...args))),
             onMouseout: _cache[1] || (_cache[1] = (...args) => ($setup.onMouseOut && $setup.onMouseOut(...args)))
-          }, toHandlers(
-      $setup.isCollapsed && $setup.isFirstLevel
-        ? { mouseenter: $setup.onMouseEnter, mouseleave: $setup.onMouseLeave }
-        : {}
+          }, toHandlers($setup.isCollapsed && $setup.isFirstLevel
+      ? { mouseenter: $setup.onMouseEnter, mouseleave: $setup.onMouseLeave }
+      : {}
     , true)), [
             (openBlock(), createBlock(resolveDynamicComponent($setup.linkComponentName ? $setup.linkComponentName : 'SidebarMenuLink'), mergeProps({
               item: $props.item,
@@ -820,9 +834,9 @@ function render$2(_ctx, _cache, $props, $setup, $data, $options) {
                   : createCommentVNode("v-if", true),
                 createElementVNode("div", {
                   class: normalizeClass([
-          'vsm--title',
-          $setup.isCollapsed && $setup.isFirstLevel && !$setup.isMobileItem && 'vsm--title_hidden',
-        ]),
+        'vsm--title',
+        $setup.isCollapsed && $setup.isFirstLevel && !$setup.isMobileItem && 'vsm--title_hidden',
+      ]),
                   style: normalizeStyle($setup.isMobileItem && $setup.mobileItemStyle)
                 }, [
                   createElementVNode("span", null, toDisplayString($props.item.title), 1 /* TEXT */),
@@ -1032,17 +1046,26 @@ var script = {
       type: Array,
       required: true,
     },
+    currRole: {
+      type: String,
+      default: '',
+      required: true,
+    },
     collapsed: {
       type: Boolean,
       default: false,
     },
+    roles: {
+      type: Array,
+      default: undefined,
+    },
     width: {
       type: String,
-      default: '290px',
+      default: '200px',
     },
     widthCollapsed: {
       type: String,
-      default: '65px',
+      default: '44px',
     },
     showChild: {
       type: Boolean,
@@ -1095,6 +1118,8 @@ var script = {
       updateCurrentRoute,
     } = initSidebar(props, context);
 
+    const hideHeader = ref(false);
+
     const computedMenu = computed(() => {
       let id = 0;
       function transformItems(items) {
@@ -1127,6 +1152,7 @@ var script = {
     });
 
     const onToggleClick = () => {
+      hideHeader.value = !hideHeader.value;
       unsetMobileItem();
       updateIsCollapsed(!isCollapsed.value);
       context.emit('update:collapsed', isCollapsed.value);
@@ -1144,6 +1170,7 @@ var script = {
       getCurrentInstance().appContext.config.globalProperties.$router;
     if (!router) {
       onMounted(() => {
+
         window.addEventListener('hashchange', updateCurrentRoute);
       });
       onUnmounted(() => {
@@ -1152,6 +1179,7 @@ var script = {
     }
 
     return {
+      hideHeader,
       sidebarMenuRef,
       isCollapsed,
       computedMenu,
@@ -1163,8 +1191,9 @@ var script = {
   },
 };
 
-const _hoisted_1 = /*#__PURE__*/createElementVNode("span", { class: "vsm--arrow_default" }, null, -1 /* HOISTED */);
-const _hoisted_2 = /*#__PURE__*/createElementVNode("span", { class: "vsm--toggle-btn_default" }, null, -1 /* HOISTED */);
+const _hoisted_1 = { key: 0 };
+const _hoisted_2 = /*#__PURE__*/createElementVNode("span", { class: "vsm--arrow_default" }, null, -1 /* HOISTED */);
+const _hoisted_3 = /*#__PURE__*/createElementVNode("span", { class: "vsm--toggle-btn_default" }, null, -1 /* HOISTED */);
 
 function render(_ctx, _cache, $props, $setup, $data, $options) {
   const _component_sidebar_menu_item = resolveComponent("sidebar-menu-item");
@@ -1175,7 +1204,11 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     class: normalizeClass([$setup.sidebarClass]),
     style: normalizeStyle({ 'max-width': $setup.sidebarWidth })
   }, [
-    renderSlot(_ctx.$slots, "header"),
+    (!$setup.hideHeader)
+      ? (openBlock(), createElementBlock("span", _hoisted_1, [
+          renderSlot(_ctx.$slots, "header")
+        ]))
+      : createCommentVNode("v-if", true),
     createVNode(_component_sidebar_menu_scroll, null, {
       default: withCtx(() => [
         createElementVNode("ul", {
@@ -1185,15 +1218,16 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
           (openBlock(true), createElementBlock(Fragment, null, renderList($setup.computedMenu, (item) => {
             return (openBlock(), createBlock(_component_sidebar_menu_item, {
               key: item.id,
+              "curr-role": $props.currRole,
               item: item
             }, {
               "dropdown-icon": withCtx(({ isOpen }) => [
                 renderSlot(_ctx.$slots, "dropdown-icon", normalizeProps(guardReactiveProps({ isOpen })), () => [
-                  _hoisted_1
+                  _hoisted_2
                 ])
               ]),
               _: 2 /* DYNAMIC */
-            }, 1032 /* PROPS, DYNAMIC_SLOTS */, ["item"]))
+            }, 1032 /* PROPS, DYNAMIC_SLOTS */, ["curr-role", "item"]))
           }), 128 /* KEYED_FRAGMENT */))
         ], 4 /* STYLE */)
       ]),
@@ -1202,12 +1236,12 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
     renderSlot(_ctx.$slots, "footer"),
     (!$props.hideToggle)
       ? (openBlock(), createElementBlock("button", {
-          key: 0,
+          key: 1,
           class: "vsm--toggle-btn",
           onClick: _cache[0] || (_cache[0] = (...args) => ($setup.onToggleClick && $setup.onToggleClick(...args)))
         }, [
           renderSlot(_ctx.$slots, "toggle-icon", {}, () => [
-            _hoisted_2
+            _hoisted_3
           ])
         ]))
       : createCommentVNode("v-if", true)

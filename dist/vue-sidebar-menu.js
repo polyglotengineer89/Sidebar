@@ -705,10 +705,24 @@
         type: Number,
         default: 1,
       },
+      currRole: {
+        type: String,
+        default: '',
+        required: true
+      }
     },
     setup(props) {
       const { getSidebarProps, getIsCollapsed: isCollapsed } = useSidebar();
       const { linkComponentName } = vue.toRefs(getSidebarProps);
+
+      const hasRole = (itemRoles, currRole) => {
+        console.log(itemRoles, currRole);
+        if(itemRoles === undefined){
+          return true
+        }
+        return itemRoles.some((role) => currRole == role)
+      };
+
 
       const {
         active,
@@ -750,6 +764,7 @@
         isFirstLevel,
         isHidden,
         hasChild,
+        hasRole,
         linkClass,
         linkAttrs,
         itemClass,
@@ -783,16 +798,15 @@
             key: 1,
             class: ['vsm--header', $props.item.class]
           }, $props.item.attributes), vue.toDisplayString($props.item.header), 17 /* TEXT, FULL_PROPS */))
-        : (!$setup.isHidden)
+        : (!$setup.isHidden && $setup.hasRole($props.item.roles,$props.currRole))
           ? (vue.openBlock(), vue.createElementBlock("li", vue.mergeProps({
               key: 2,
               class: $setup.itemClass,
               onMouseover: _cache[0] || (_cache[0] = (...args) => ($setup.onMouseOver && $setup.onMouseOver(...args))),
               onMouseout: _cache[1] || (_cache[1] = (...args) => ($setup.onMouseOut && $setup.onMouseOut(...args)))
-            }, vue.toHandlers(
-        $setup.isCollapsed && $setup.isFirstLevel
-          ? { mouseenter: $setup.onMouseEnter, mouseleave: $setup.onMouseLeave }
-          : {}
+            }, vue.toHandlers($setup.isCollapsed && $setup.isFirstLevel
+        ? { mouseenter: $setup.onMouseEnter, mouseleave: $setup.onMouseLeave }
+        : {}
       , true)), [
               (vue.openBlock(), vue.createBlock(vue.resolveDynamicComponent($setup.linkComponentName ? $setup.linkComponentName : 'SidebarMenuLink'), vue.mergeProps({
                 item: $props.item,
@@ -824,9 +838,9 @@
                     : vue.createCommentVNode("v-if", true),
                   vue.createElementVNode("div", {
                     class: vue.normalizeClass([
-            'vsm--title',
-            $setup.isCollapsed && $setup.isFirstLevel && !$setup.isMobileItem && 'vsm--title_hidden',
-          ]),
+          'vsm--title',
+          $setup.isCollapsed && $setup.isFirstLevel && !$setup.isMobileItem && 'vsm--title_hidden',
+        ]),
                     style: vue.normalizeStyle($setup.isMobileItem && $setup.mobileItemStyle)
                   }, [
                     vue.createElementVNode("span", null, vue.toDisplayString($props.item.title), 1 /* TEXT */),
@@ -1036,17 +1050,26 @@
         type: Array,
         required: true,
       },
+      currRole: {
+        type: String,
+        default: '',
+        required: true,
+      },
       collapsed: {
         type: Boolean,
         default: false,
       },
+      roles: {
+        type: Array,
+        default: undefined,
+      },
       width: {
         type: String,
-        default: '290px',
+        default: '200px',
       },
       widthCollapsed: {
         type: String,
-        default: '65px',
+        default: '44px',
       },
       showChild: {
         type: Boolean,
@@ -1099,6 +1122,8 @@
         updateCurrentRoute,
       } = initSidebar(props, context);
 
+      const hideHeader = vue.ref(false);
+
       const computedMenu = vue.computed(() => {
         let id = 0;
         function transformItems(items) {
@@ -1131,6 +1156,7 @@
       });
 
       const onToggleClick = () => {
+        hideHeader.value = !hideHeader.value;
         unsetMobileItem();
         updateIsCollapsed(!isCollapsed.value);
         context.emit('update:collapsed', isCollapsed.value);
@@ -1148,6 +1174,7 @@
         vue.getCurrentInstance().appContext.config.globalProperties.$router;
       if (!router) {
         vue.onMounted(() => {
+
           window.addEventListener('hashchange', updateCurrentRoute);
         });
         vue.onUnmounted(() => {
@@ -1156,6 +1183,7 @@
       }
 
       return {
+        hideHeader,
         sidebarMenuRef,
         isCollapsed,
         computedMenu,
@@ -1167,8 +1195,9 @@
     },
   };
 
-  const _hoisted_1 = /*#__PURE__*/vue.createElementVNode("span", { class: "vsm--arrow_default" }, null, -1 /* HOISTED */);
-  const _hoisted_2 = /*#__PURE__*/vue.createElementVNode("span", { class: "vsm--toggle-btn_default" }, null, -1 /* HOISTED */);
+  const _hoisted_1 = { key: 0 };
+  const _hoisted_2 = /*#__PURE__*/vue.createElementVNode("span", { class: "vsm--arrow_default" }, null, -1 /* HOISTED */);
+  const _hoisted_3 = /*#__PURE__*/vue.createElementVNode("span", { class: "vsm--toggle-btn_default" }, null, -1 /* HOISTED */);
 
   function render(_ctx, _cache, $props, $setup, $data, $options) {
     const _component_sidebar_menu_item = vue.resolveComponent("sidebar-menu-item");
@@ -1179,7 +1208,11 @@
       class: vue.normalizeClass([$setup.sidebarClass]),
       style: vue.normalizeStyle({ 'max-width': $setup.sidebarWidth })
     }, [
-      vue.renderSlot(_ctx.$slots, "header"),
+      (!$setup.hideHeader)
+        ? (vue.openBlock(), vue.createElementBlock("span", _hoisted_1, [
+            vue.renderSlot(_ctx.$slots, "header")
+          ]))
+        : vue.createCommentVNode("v-if", true),
       vue.createVNode(_component_sidebar_menu_scroll, null, {
         default: vue.withCtx(() => [
           vue.createElementVNode("ul", {
@@ -1189,15 +1222,16 @@
             (vue.openBlock(true), vue.createElementBlock(vue.Fragment, null, vue.renderList($setup.computedMenu, (item) => {
               return (vue.openBlock(), vue.createBlock(_component_sidebar_menu_item, {
                 key: item.id,
+                "curr-role": $props.currRole,
                 item: item
               }, {
                 "dropdown-icon": vue.withCtx(({ isOpen }) => [
                   vue.renderSlot(_ctx.$slots, "dropdown-icon", vue.normalizeProps(vue.guardReactiveProps({ isOpen })), () => [
-                    _hoisted_1
+                    _hoisted_2
                   ])
                 ]),
                 _: 2 /* DYNAMIC */
-              }, 1032 /* PROPS, DYNAMIC_SLOTS */, ["item"]))
+              }, 1032 /* PROPS, DYNAMIC_SLOTS */, ["curr-role", "item"]))
             }), 128 /* KEYED_FRAGMENT */))
           ], 4 /* STYLE */)
         ]),
@@ -1206,12 +1240,12 @@
       vue.renderSlot(_ctx.$slots, "footer"),
       (!$props.hideToggle)
         ? (vue.openBlock(), vue.createElementBlock("button", {
-            key: 0,
+            key: 1,
             class: "vsm--toggle-btn",
             onClick: _cache[0] || (_cache[0] = (...args) => ($setup.onToggleClick && $setup.onToggleClick(...args)))
           }, [
             vue.renderSlot(_ctx.$slots, "toggle-icon", {}, () => [
-              _hoisted_2
+              _hoisted_3
             ])
           ]))
         : vue.createCommentVNode("v-if", true)

@@ -28,10 +28,7 @@
     "admin-sidebar"
   ],
   "scripts": {
-    "dev": "cd demo && npm run dev",
-    "build:demo": "cd demo && npm run build",
     "build:lib": "rollup -c rollup.config.js",
-    "preview": "cd demo && npm run preview",
     "lint": "eslint --ext .js,.vue ."
   },
   "postcss": {

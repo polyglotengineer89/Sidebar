@@ -1,17 +1,12 @@
 <template>
-  <div
-    ref="sidebarMenuRef"
-    :class="[sidebarClass]"
-    :style="{ 'max-width': sidebarWidth }"
-  >
-    <slot name="header" />
+  <div ref="sidebarMenuRef" :class="[sidebarClass]" :style="{ 'max-width': sidebarWidth }">
+    <span v-if="!hideHeader">
+      <slot name="header" />
+    </span>
+  
     <sidebar-menu-scroll>
       <ul class="vsm--menu" :style="{ width: sidebarWidth }">
-        <sidebar-menu-item
-          v-for="item in computedMenu"
-          :key="item.id"
-          :item="item"
-        >
+        <sidebar-menu-item v-for="item in computedMenu" :key="item.id" :curr-role="currRole" :item="item">
           <template #dropdown-icon="{ isOpen }">
             <slot name="dropdown-icon" v-bind="{ isOpen }">
               <span class="vsm--arrow_default" />
@@ -32,6 +27,7 @@
 <script>
 import {
   watch,
+  ref,
   getCurrentInstance,
   onMounted,
   onUnmounted,
@@ -54,17 +50,26 @@ export default {
       type: Array,
       required: true,
     },
+    currRole: {
+      type: String,
+      default: '',
+      required: true,
+    },
     collapsed: {
       type: Boolean,
       default: false,
     },
+    roles: {
+      type: Array,
+      default: undefined,
+    },
     width: {
       type: String,
-      default: '290px',
+      default: '200px',
     },
     widthCollapsed: {
       type: String,
-      default: '65px',
+      default: '44px',
     },
     showChild: {
       type: Boolean,
@@ -117,6 +122,8 @@ export default {
       updateCurrentRoute,
     } = initSidebar(props, context)
 
+    const hideHeader = ref(false)
+
     const computedMenu = computed(() => {
       let id = 0
       function transformItems(items) {
@@ -149,6 +156,7 @@ export default {
     })
 
     const onToggleClick = () => {
+      hideHeader.value = !hideHeader.value;
       unsetMobileItem()
       updateIsCollapsed(!isCollapsed.value)
       context.emit('update:collapsed', isCollapsed.value)
@@ -166,6 +174,7 @@ export default {
       getCurrentInstance().appContext.config.globalProperties.$router
     if (!router) {
       onMounted(() => {
+
         window.addEventListener('hashchange', updateCurrentRoute)
       })
       onUnmounted(() => {
@@ -174,6 +183,7 @@ export default {
     }
 
     return {
+      hideHeader,
       sidebarMenuRef,
       isCollapsed,
       computedMenu,
@@ -188,4 +198,31 @@ export default {
 
 <style lang="scss">
 @import '../scss/vue-sidebar-menu';
+
+.v-sidebar-menu {
+  background: #3c4b64;
+  color: #fff;
+}
+
+.v-sidebar-menu .vsm--link_level-1 .vsm--icon {
+  background-color: transparent;
+}
+
+.v-sidebar-menu .vsm--badge_default,
+.v-sidebar-menu .vsm--toggle-btn {
+  background-color: rgba(0, 0, 21, 0.2);
+}
+
+.v-sidebar-menu .vsm--link{
+  padding: 11px 5px;
+}
+
+body{
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
+    Helvetica Neue, Arial, Noto Sans, sans-serif, Apple Color Emoji,
+    Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+}
 </style>
