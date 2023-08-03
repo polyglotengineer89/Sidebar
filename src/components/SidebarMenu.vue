@@ -65,7 +65,7 @@ export default {
     },
     width: {
       type: String,
-      default: '200px',
+      default: '250px',
     },
     widthCollapsed: {
       type: String,
